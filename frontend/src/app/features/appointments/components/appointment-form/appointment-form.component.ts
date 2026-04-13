@@ -16,6 +16,8 @@ export class AppointmentFormComponent implements OnInit {
   @Input() consultationTypes: ConsultationType[] = [];
   @Input() caregivers: User[] = [];
   @Input() availableSlots: string[] = [];
+  @Input() requireCaregiver = false;
+  @Input() consultationTypeLocked = false;
   @Input() formData: any = {
     doctorId: '',
     consultationTypeId: '',
@@ -40,11 +42,25 @@ export class AppointmentFormComponent implements OnInit {
   }
 
   isValid(): boolean {
-    return !!(
+    const hasRequiredBaseFields = !!(
       this.formData.doctorId &&
       this.formData.consultationTypeId &&
       this.formData.date &&
       this.formData.time
+    );
+
+    if (!hasRequiredBaseFields) {
+      return false;
+    }
+
+    if (!this.requireCaregiver) {
+      return true;
+    }
+
+    return !!(
+      this.formData.caregiverId &&
+      this.formData.caregiverPresence &&
+      this.formData.caregiverPresence !== 'NONE'
     );
   }
 }

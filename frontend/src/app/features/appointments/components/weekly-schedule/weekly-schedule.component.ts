@@ -1,6 +1,8 @@
-import { Component, EventEmitter, Input, Output, OnInit } from '@angular/core';
+import { Component, EventEmitter, Input, Output, OnChanges, OnInit, SimpleChanges } from '@angular/core';
 import { CommonModule } from '@angular/common';
+import { forkJoin } from 'rxjs';
 import { ConsultationType } from '../../models/consultation-type.model';
+import { AvailabilityService } from '../../services/availability.service';
 
 export interface TimeSlot {
   id: string;
@@ -21,16 +23,31 @@ export interface TimeSlot {
 export class WeeklyScheduleComponent implements OnInit {
   @Input() doctorId: string | null = null;
   @Input() consultationTypes: ConsultationType[] = [];
+  @Input() consultationDurationMinutes = 20;
   @Output() slotSelected = new EventEmitter<any>();
 
   currentDate: Date = new Date();
   weekDays: string[] = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'];
   weekDates: Date[] = [];
   timeSlots: { time: string; slots: any[] }[] = [];
+  loading = false;
+  errorMessage = '';
+
+  constructor(private availabilityService: AvailabilityService) {}
 
   ngOnInit() {
     this.generateWeekDates();
-    this.generateTimeSlots();
+    this.loadWeekAvailability();
+  }
+
+  ngOnChanges(changes: SimpleChanges): void {
+    if (changes['doctorId'] || changes['consultationDurationMinutes']) {
+      this.clearSelection();
+      if (this.weekDates.length === 0) {
+        this.generateWeekDates();
+      }
+      this.loadWeekAvailability();
+    }
   }
 
   get weekStart(): Date {
@@ -43,7 +60,9 @@ export class WeeklyScheduleComponent implements OnInit {
 
   generateWeekDates() {
     const start = new Date(this.currentDate);
-    start.setDate(start.getDate() - start.getDay() + 1); // Monday
+    const day = start.getDay();
+    const diff = day === 0 ? -6 : 1 - day;
+    start.setDate(start.getDate() + diff);
 
     this.weekDates = [];
     for (let i = 0; i < 7; i++) {
@@ -53,32 +72,74 @@ export class WeeklyScheduleComponent implements OnInit {
     }
   }
 
-  generateTimeSlots() {
-    // Generate time slots from 9 AM to 5 PM
-    const times = [
-      '09:00', '09:30', '10:00', '10:30', '11:00', '11:30',
-      '14:00', '14:30', '15:00', '15:30', '16:00', '16:30'
-    ];
+  loadWeekAvailability(): void {
+    if (!this.doctorId) {
+      this.timeSlots = [];
+      this.errorMessage = 'Select a doctor to load real availability.';
+      return;
+    }
 
-    this.timeSlots = times.map(time => ({
-      time,
-      slots: this.weekDates.map(date => ({
-        id: `${date.toISOString()}-${time}`,
-        date: date,
-        time: time,
-        available: this.isSlotAvailable(date, time),
-        selected: false
-      }))
-    }));
+    this.loading = true;
+    this.errorMessage = '';
+
+    const requests = this.weekDates.map((date) =>
+      this.availabilityService.getAvailableTimeSlots(
+        this.doctorId!,
+        new Date(date),
+        this.consultationDurationMinutes
+      )
+    );
+
+    forkJoin(requests).subscribe({
+      next: (slotsByDate) => {
+        const normalizedByDate = new Map<string, string[]>();
+
+        this.weekDates.forEach((date, index) => {
+          normalizedByDate.set(
+            this.formatDateKey(date),
+            (slotsByDate[index] || []).map((slot) => this.normalizeTime(slot))
+          );
+        });
+
+        const uniqueTimes = Array.from(
+          new Set(Array.from(normalizedByDate.values()).flat())
+        ).sort((a, b) => a.localeCompare(b));
+
+        this.timeSlots = uniqueTimes.map((time) => ({
+          time,
+          slots: this.weekDates.map((date) => {
+            const availableTimes = normalizedByDate.get(this.formatDateKey(date)) || [];
+            return {
+              id: `${this.formatDateKey(date)}-${time}`,
+              date,
+              time,
+              available: availableTimes.includes(time),
+              selected: false
+            };
+          })
+        }));
+
+        if (uniqueTimes.length === 0) {
+          this.errorMessage = 'No available slots were found for this doctor and consultation type this week.';
+        }
+
+        this.loading = false;
+      },
+      error: (error) => {
+        console.error('Error loading weekly availability:', error);
+        this.timeSlots = [];
+        this.errorMessage = 'Could not load real availability. Please choose another doctor or try again.';
+        this.loading = false;
+      }
+    });
   }
 
-  isSlotAvailable(date: Date, time: string): boolean {
-    // In a real app, this would check against actual availability data
-    // For demo, make weekends unavailable and randomize
-    if (date.getDay() === 0 || date.getDay() === 6) {
-      return false; // Weekends unavailable
-    }
-    return Math.random() > 0.3; // 70% chance available
+  clearSelection(): void {
+    this.timeSlots.forEach((timeSlot) => {
+      timeSlot.slots.forEach((slot) => {
+        slot.selected = false;
+      });
+    });
   }
 
   selectSlot(slot: any) {
@@ -104,7 +165,7 @@ export class WeeklyScheduleComponent implements OnInit {
 
   calculateEndTime(startTime: string): string {
     const [hours, minutes] = startTime.split(':').map(Number);
-    let endMinutes = minutes + 20;
+    let endMinutes = minutes + this.consultationDurationMinutes;
     let endHours = hours;
 
     if (endMinutes >= 60) {
@@ -118,12 +179,26 @@ export class WeeklyScheduleComponent implements OnInit {
   previousWeek() {
     this.currentDate.setDate(this.currentDate.getDate() - 7);
     this.generateWeekDates();
-    this.generateTimeSlots();
+    this.clearSelection();
+    this.loadWeekAvailability();
   }
 
   nextWeek() {
     this.currentDate.setDate(this.currentDate.getDate() + 7);
     this.generateWeekDates();
-    this.generateTimeSlots();
+    this.clearSelection();
+    this.loadWeekAvailability();
+  }
+
+  private normalizeTime(time: string): string {
+    const [hours = '00', minutes = '00'] = (time || '').split(':');
+    return `${hours.padStart(2, '0')}:${minutes.padStart(2, '0')}`;
+  }
+
+  private formatDateKey(date: Date): string {
+    const year = date.getFullYear();
+    const month = `${date.getMonth() + 1}`.padStart(2, '0');
+    const day = `${date.getDate()}`.padStart(2, '0');
+    return `${year}-${month}-${day}`;
   }
 }

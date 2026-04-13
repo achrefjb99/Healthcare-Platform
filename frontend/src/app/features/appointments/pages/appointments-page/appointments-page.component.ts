@@ -188,7 +188,7 @@ export class AppointmentsPageComponent implements OnInit {
 
   loadConsultationTypes(): Promise<void> {
     return new Promise((resolve) => {
-      this.consultationTypeService.getAllConsultationTypes().subscribe({
+      this.consultationTypeService.getActiveConsultationTypes().subscribe({
         next: (types) => {
           this.consultationTypes = types || [];
           console.log('✅ Consultation types loaded:', this.consultationTypes.length);
@@ -467,8 +467,8 @@ export class AppointmentsPageComponent implements OnInit {
       return;
     }
 
-    const selectedDate = new Date(date);
-    const durationMinutes = 20;
+    const selectedDate = this.parseLocalDate(date);
+    const durationMinutes = this.selectedConsultationDuration;
 
     this.loading = true;
 
@@ -501,7 +501,33 @@ export class AppointmentsPageComponent implements OnInit {
     }
   }
 
-  addAppointment(formData: any): void {
+  onConsultationTypeChange(consultationTypeId: string): void {
+    this.newAppointment.consultationTypeId = consultationTypeId;
+    this.selectedSlot = null;
+    this.newAppointment.time = '';
+
+    if (this.selectedConsultationType?.requiresCaregiver && this.newAppointment.caregiverPresence === 'NONE') {
+      this.newAppointment.caregiverPresence = this.myCaregivers.length > 0 ? 'PHYSICAL' : 'NONE';
+    }
+
+    this.onDoctorOrDateChange();
+  }
+
+  get selectedConsultationType(): ConsultationType | undefined {
+    return this.consultationTypes.find(
+      (type) => type.typeId === this.newAppointment.consultationTypeId
+    );
+  }
+
+  get selectedConsultationDuration(): number {
+    return this.selectedConsultationType?.defaultDurationMinutes || 20;
+  }
+
+  get selectedConsultationRequiresCaregiver(): boolean {
+    return !!this.selectedConsultationType?.requiresCaregiver;
+  }
+
+  addAppointment(formData: any, onSuccess?: () => void): void {
     if (!this.isFormValid()) {
       this.toastr.warning('Please fill in all required fields');
       return;
@@ -513,6 +539,21 @@ export class AppointmentsPageComponent implements OnInit {
 
     if (!selectedDoctor || !selectedType) {
       this.toastr.error('Please select a valid doctor and consultation type');
+      return;
+    }
+
+    if (!selectedType.active) {
+      this.toastr.error('This consultation type is currently inactive.');
+      return;
+    }
+
+    if (selectedType.requiresCaregiver && !formData.caregiverId) {
+      this.toastr.error('This consultation type requires a caregiver. Please select one before booking.');
+      return;
+    }
+
+    if (selectedType.requiresCaregiver && formData.caregiverPresence === 'NONE') {
+      this.toastr.error('Caregiver presence cannot be "Seul(e)" for this consultation type.');
       return;
     }
 
@@ -554,6 +595,7 @@ export class AppointmentsPageComponent implements OnInit {
         this.closeAddDialog();
         this.loading = false;
         this.toastr.success('Appointment created successfully');
+        onSuccess?.();
       },
       error: (error) => {
         console.error('Error creating appointment:', error);
@@ -567,7 +609,7 @@ export class AppointmentsPageComponent implements OnInit {
         } else if (error.status === 500) {
           this.toastr.error('Server error. Please try again later.');
         } else {
-          this.toastr.error('Failed to create appointment. Please try again.');
+          this.toastr.error(this.extractErrorMessage(error, 'Failed to create appointment. Please try again.'));
         }
         this.loading = false;
       }
@@ -602,6 +644,9 @@ export class AppointmentsPageComponent implements OnInit {
     this.selectedDoctorId = doctorId;
     this.bookingStep = 2;
     this.newAppointment.doctorId = doctorId;
+    this.selectedSlot = null;
+    this.newAppointment.date = '';
+    this.newAppointment.time = '';
   }
 
   onSlotSelected(slot: any): void {
@@ -633,11 +678,12 @@ export class AppointmentsPageComponent implements OnInit {
   }
 
   bookAppointment(formData: any): void {
-    this.addAppointment(formData);
-    this.activeTab = 'my-appointments';
-    this.bookingStep = 1;
-    this.selectedDoctorId = null;
-    this.selectedSlot = null;
+    this.addAppointment(formData, () => {
+      this.activeTab = 'my-appointments';
+      this.bookingStep = 1;
+      this.selectedDoctorId = null;
+      this.selectedSlot = null;
+    });
   }
 
   private formatDate(date: Date): string {
@@ -646,5 +692,19 @@ export class AppointmentsPageComponent implements OnInit {
     const month = (d.getMonth() + 1).toString().padStart(2, '0');
     const day = d.getDate().toString().padStart(2, '0');
     return `${year}-${month}-${day}`;
+  }
+
+  private parseLocalDate(date: string): Date {
+    const [year, month, day] = date.split('-').map(Number);
+    return new Date(year, month - 1, day);
+  }
+
+  private extractErrorMessage(error: any, fallback: string): string {
+    const validationErrors = error?.error?.validationErrors as Record<string, string> | undefined;
+    if (validationErrors && Object.keys(validationErrors).length > 0) {
+      return Object.values(validationErrors).join(' | ');
+    }
+
+    return error?.error?.message || fallback;
   }
 }

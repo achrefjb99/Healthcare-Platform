@@ -194,7 +194,7 @@
       </div>
       <div class="flex justify-between max-w-2xl mx-auto text-sm text-[#6B5B8C] px-2">
         <span>Choose Doctor</span>
-        <span>Choose Slot</span>
+        <span>Choose Type & Slot</span>
         <span>Confirm</span>
       </div>
 
@@ -235,9 +235,33 @@
 
       <!-- Step 2: Slot Selection -->
       <div *ngIf="bookingStep === 2">
+        <div class="mb-4 rounded-xl border border-[#C4B5FD] bg-white p-4 shadow-sm">
+          <label class="mb-2 block text-sm font-medium text-[#1E293B]">Consultation type *</label>
+          <select
+            [(ngModel)]="newAppointment.consultationTypeId"
+            (change)="onConsultationTypeChange(newAppointment.consultationTypeId)"
+            class="w-full rounded-md border border-[#E2E8F0] px-3 py-2 focus:outline-none focus:ring-2 focus:ring-[#7C3AED]">
+            <option value="">Choose a consultation type</option>
+            <option *ngFor="let type of consultationTypes" [value]="type.typeId">
+              {{ type.name }} ({{ type.defaultDurationMinutes }} min)
+            </option>
+          </select>
+
+          <div *ngIf="selectedConsultationType" class="mt-3 text-sm text-[#6B5B8C]">
+            <span class="font-medium text-[#2D1B4E]">{{ selectedConsultationType.name }}</span>
+            <span> • {{ selectedConsultationType.defaultDurationMinutes }} minutes</span>
+            <span *ngIf="selectedConsultationRequiresCaregiver"> • caregiver required</span>
+          </div>
+
+          <div *ngIf="selectedConsultationRequiresCaregiver && myCaregivers.length === 0" class="mt-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            This consultation type requires a caregiver, but no caregiver is linked to your account yet.
+          </div>
+        </div>
+
         <app-weekly-schedule
           [doctorId]="selectedDoctorId"
           [consultationTypes]="consultationTypes"
+          [consultationDurationMinutes]="selectedConsultationDuration"
           (slotSelected)="onSlotSelected($event)">
         </app-weekly-schedule>
 
@@ -246,7 +270,7 @@
                   (click)="bookingStep = 1">
             ← Back
           </button>
-          <button *ngIf="selectedSlot"
+          <button *ngIf="selectedSlot && newAppointment.consultationTypeId"
                   class="px-4 py-2 bg-[#7C3AED] text-white rounded-md hover:bg-[#6D28D9] transition-colors"
                   (click)="bookingStep = 3">
             Continue →
@@ -282,11 +306,14 @@
             <!-- Reused appointment form -->
             <app-appointment-form
               [doctors]="[getSelectedDoctor()]"
-              [consultationTypes]="consultationTypes"
+              [consultationTypes]="selectedConsultationType ? [selectedConsultationType] : consultationTypes"
               [caregivers]="myCaregivers"
               [availableSlots]="[selectedSlot?.startTime]"
+              [requireCaregiver]="selectedConsultationRequiresCaregiver"
+              [consultationTypeLocked]="!!selectedConsultationType"
               [formData]="newAppointment"
               (onClose)="bookingStep = 2"
+              (onTypeChange)="onConsultationTypeChange($event)"
               (onSubmit)="bookAppointment($event)">
             </app-appointment-form>
 

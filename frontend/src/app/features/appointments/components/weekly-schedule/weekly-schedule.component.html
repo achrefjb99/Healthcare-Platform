@@ -1,7 +1,7 @@
 <div class="bg-white rounded-xl border border-[#C4B5FD] shadow-sm overflow-hidden">
   <div class="p-4 border-b border-[#C4B5FD] bg-[#F9FAFB]">
     <h3 class="font-semibold text-[#2D1B4E]">Available Time Slots</h3>
-    <p class="text-sm text-[#6B5B8C]">Select a time for your appointment</p>
+    <p class="text-sm text-[#6B5B8C]">Select a real available slot for the chosen consultation type</p>
   </div>
 
   <!-- Week navigation -->
@@ -21,6 +21,15 @@
 
   <!-- Days grid -->
   <div class="p-4">
+    <div *ngIf="loading" class="rounded-md border border-[#E2E8F0] bg-[#F9FAFB] px-4 py-3 text-sm text-[#6B5B8C]">
+      Loading availability...
+    </div>
+
+    <div *ngIf="!loading && errorMessage" class="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+      {{ errorMessage }}
+    </div>
+
+    <ng-container *ngIf="!loading && timeSlots.length > 0">
     <div class="grid grid-cols-7 gap-2 mb-2">
       <div *ngFor="let day of weekDays"
            class="text-center font-medium text-[#2D1B4E]">
@@ -70,5 +79,6 @@
         Booked
       </div>
     </div>
+    </ng-container>
   </div>
 </div>

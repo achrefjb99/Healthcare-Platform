@@ -1,9 +1,4 @@
-FROM eclipse-temurin:17-jre
-
-WORKDIR /app
-
-COPY target/*.jar app.jar
-
+FROM eclipse-temurin:17
 EXPOSE 8098
-
-ENTRYPOINT ["java", "-jar", "app.jar"]
+ADD target/dailyme-service-1.0.0.jar Dailyme-service.jar
+ENTRYPOINT ["java", "-jar", "Dailyme-service.jar"]

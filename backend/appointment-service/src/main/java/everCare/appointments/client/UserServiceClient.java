@@ -9,7 +9,7 @@ import java.util.List;
 
 // Feign client to call NestJS user-node-service
 // URL includes context path /EverCare
-@FeignClient(name = "user-node-service", url = "http://localhost:8096/EverCare")
+@FeignClient(name = "user-node-service", url = "${user.service.url:http://localhost:8096/EverCare}")
 public interface UserServiceClient {
 
     // Get user by ID from NestJS service
