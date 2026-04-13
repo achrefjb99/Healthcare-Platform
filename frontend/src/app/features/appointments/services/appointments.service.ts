@@ -15,7 +15,7 @@ import { DoctorTrendPoint } from '../models/doctor-trend-point';
 })
 export class AppointmentService {
 
-  private baseUrl = "http://localhost:8089/EverCare/appointments";
+  private baseUrl = "/EverCare/appointments";
   private readonly TIMEOUT = 30000; // 30 seconds timeout
 
   constructor(private http: HttpClient) { }

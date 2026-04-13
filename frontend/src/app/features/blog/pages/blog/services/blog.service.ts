@@ -9,7 +9,7 @@ import { Article, Category, CategoryPerformance } from '../../../models/blog.mod
 })
 export class BlogService {
   // URL via l’API Gateway (port 8089)
-  private apiUrl = 'http://localhost:8089/EverCare/api/blog';
+  private apiUrl = '/EverCare/api/blog';
 
   constructor(private http: HttpClient) { }
 

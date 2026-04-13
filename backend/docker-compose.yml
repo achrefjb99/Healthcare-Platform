@@ -162,3 +162,14 @@ services:
       - SERVER_PORT=8087
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - NOTIFICATION_SERVICE_URL=http://api-gateway:8089/EverCare
+
+  frontend:
+    build: ../frontend
+    image: evercare/frontend:1.0
+    container_name: frontend
+    restart: unless-stopped
+    ports:
+      - "4200:80"
+    depends_on:
+      - api-gateway
+      - appointment-service

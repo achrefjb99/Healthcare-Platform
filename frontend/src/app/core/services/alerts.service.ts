@@ -5,7 +5,7 @@ import { Incident, Alert } from '../model/alerts.models';
 
 @Injectable({ providedIn: 'root' })
 export class AlertsService {
-  private baseUrl = 'http://localhost:8089/EverCare'; // gateway URL
+  private baseUrl = '/EverCare';
 
   constructor(private http: HttpClient) {}
 

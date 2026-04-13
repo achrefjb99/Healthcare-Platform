@@ -76,8 +76,8 @@ export class AuthService {
   //private usersUrl = 'http://localhost:8096/EverCare/users';
 
   // Local user service URLs
-  private apiUrl = 'http://localhost:8096/EverCare/auth';
-  private usersUrl = 'http://localhost:8096/EverCare/users';
+  private apiUrl = '/EverCare/auth';
+  private usersUrl = '/EverCare/users';
 
   // Keycloak configuration – use a public client (no secret) created in Keycloak -islem
   //private keycloakUrl = 'http://localhost:8180/realms/EverCareRealm/protocol/openid-connect/token';
@@ -85,7 +85,7 @@ export class AuthService {
 
   // Keycloak configuration – use a public client (no secret) created in Keycloak - badr
   private keycloakUrl =
-    'http://localhost:8090/realms/EverCareRealm/protocol/openid-connect/token';
+    '/realms/EverCareRealm/protocol/openid-connect/token';
   private clientId = 'frontend-app';
   private clientSecret = ''; // Public client - no secret needed // Replace with your public client ID
 

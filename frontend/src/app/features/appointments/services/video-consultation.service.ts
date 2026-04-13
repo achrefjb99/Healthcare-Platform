@@ -34,7 +34,7 @@ export interface SignalingMessage {
   providedIn: 'root'
 })
 export class VideoConsultationService {
-  private apiUrl = "http://localhost:8089/EverCare/video";
+  private apiUrl = "/EverCare/video";
   private stompClient: Client | null = null;
   private peerConnections: Map<string, RTCPeerConnection> = new Map();
 
@@ -119,7 +119,7 @@ export class VideoConsultationService {
       this.currentRoomId = roomId;
 
       this.stompClient = new Client({
-        webSocketFactory: () => new SockJS("http://localhost:8089/EverCare/ws-consultation"),
+        webSocketFactory: () => new SockJS("/EverCare/ws-consultation"),
         connectHeaders: {
           Authorization: `Bearer ${this.authService.getToken()}`
         },

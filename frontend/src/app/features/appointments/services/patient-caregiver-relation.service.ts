@@ -11,7 +11,7 @@ import { AuthService } from '../../front-office/pages/login/auth.service';
 })
 export class CaregiverPatientService {
 
-  private baseUrl ="http://localhost:8089/EverCare";
+  private baseUrl ="/EverCare";
 
   constructor(
     private http: HttpClient,

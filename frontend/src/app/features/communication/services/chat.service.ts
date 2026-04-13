@@ -10,13 +10,13 @@ import { Client } from '@stomp/stompjs';
 @Injectable({ providedIn: 'root' })
 export class ChatService {
   // Gateway URLs (à adapter selon votre configuration)
-  private gatewayUrl = 'http://localhost:8089/communication-service/api';
-  private userApiUrl = 'http://localhost:8096/EverCare/users';
+  private gatewayUrl = '/communication-service/api';
+  private userApiUrl = '/EverCare/users';
 
   // WebSocket direct (port du communication-service)
-  private webSocketUrl = 'http://localhost:8086/ws-chat';
+  private webSocketUrl = '/ws-chat';
 
-  public uploadUrl = 'http://localhost:8089/communication-service/uploads/';
+  public uploadUrl = '/communication-service/uploads/';
 
   constructor(private http: HttpClient) { }
 

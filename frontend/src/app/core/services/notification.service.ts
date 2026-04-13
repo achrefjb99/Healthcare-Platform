@@ -17,7 +17,7 @@ export interface Notification {
 export class NotificationService {
   // Update with your actual notification service URL
  // private apiUrl = 'http://localhost:8095/EverCare/api/notifications';
- private apiUrl = 'http://localhost:8089/EverCare/api/notifications';
+ private apiUrl = '/EverCare/api/notifications';
 
   constructor(private http: HttpClient) {}
 

@@ -23,7 +23,7 @@ import {
   providedIn: 'root',
 })
 export class MedicalFolderService {
-  private readonly baseUrl = 'http://localhost:8089/api/medical-records';
+  private readonly baseUrl = '/api/medical-records';
 
   constructor(
     private readonly http: HttpClient,

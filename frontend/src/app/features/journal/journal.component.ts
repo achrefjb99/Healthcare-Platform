@@ -45,7 +45,7 @@ export class JournalComponent implements OnInit, OnDestroy, OnChanges {
   recordingSeconds = 0;
   private timer: any = null;
 
- private readonly API_BASE = 'http://localhost:8098/api/journal';
+ private readonly API_BASE = '/api/journal';
 
   constructor(private http: HttpClient) {}
 
@@ -302,7 +302,7 @@ export class JournalComponent implements OnInit, OnDestroy, OnChanges {
     if (p.startsWith('http://') || p.startsWith('https://')) return p;
 
     // ✅ same service port/context
-    return `http://localhost:8098/dailyme/${p}`;
+    return `/dailyme/${p}`;
   }
 
   private startTimer(): void {

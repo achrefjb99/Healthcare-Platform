@@ -11,7 +11,7 @@ import { CreateAvailabilityRequest } from '../models/availability-request';
 })
 export class AvailabilityService {
 
-  private baseUrl = "http://localhost:8089/EverCare/availabilities";
+  private baseUrl = "/EverCare/availabilities";
 
   constructor(private http: HttpClient) { }
 
