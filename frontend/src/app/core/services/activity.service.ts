@@ -209,6 +209,6 @@ export class ActivityService {
   uploadImage(file: File): Observable<string> {
     const formData = new FormData();
     formData.append('file', file);
-    return this.http.post<string>(`${this.apiUrl}/admin/uploads`, formData);
+    return this.http.post<string>(`${this.apiUrl}/admin/uploads/image`, formData);
   }
 }

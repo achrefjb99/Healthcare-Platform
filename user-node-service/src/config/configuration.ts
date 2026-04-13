@@ -30,7 +30,7 @@ export default () => ({
     enabled: process.env.RABBITMQ_ENABLED !== 'false',
     url:
       process.env.RABBITMQ_URL ||
-      `amqp://${process.env.RABBITMQ_USERNAME || 'guest'}:${process.env.RABBITMQ_PASSWORD || 'guest'}@${process.env.RABBITMQ_HOST || 'localhost'}:${process.env.RABBITMQ_PORT || '5672'}`,
+      `amqp://${process.env.RABBITMQ_USERNAME || 'admin'}:${process.env.RABBITMQ_PASSWORD || 'admin123'}@${process.env.RABBITMQ_HOST || 'localhost'}:${process.env.RABBITMQ_PORT || '5672'}`,
     medicalRecord: {
       exchange:
         process.env.MEDICAL_RECORD_EXCHANGE || 'medical.record.exchange',

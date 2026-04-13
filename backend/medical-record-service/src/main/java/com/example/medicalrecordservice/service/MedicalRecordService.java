@@ -2,9 +2,11 @@ package com.example.medicalrecordservice.service;
 
 import com.example.medicalrecordservice.client.UserServiceGateway;
 import com.example.medicalrecordservice.dto.MedicalRecordArchiveRequest;
+import com.example.medicalrecordservice.dto.UserSummaryDto;
 import com.example.medicalrecordservice.entity.MedicalRecord;
 import com.example.medicalrecordservice.exception.BadRequestException;
 import com.example.medicalrecordservice.exception.ConflictException;
+import com.example.medicalrecordservice.messaging.MedicalRecordEventPublisher;
 import com.example.medicalrecordservice.repository.MedicalRecordRepository;
 import lombok.RequiredArgsConstructor;
 import org.springframework.stereotype.Service;
@@ -18,6 +20,7 @@ public class MedicalRecordService {
 
 	private final MedicalRecordRepository medicalRecordRepository;
 	private final UserServiceGateway userServiceGateway;
+    private final MedicalRecordEventPublisher medicalRecordEventPublisher;
 
 	public MedicalRecord create(MedicalRecord record) {
 		if (record.getPatientId() == null || record.getPatientId().isBlank()) {
@@ -26,8 +29,10 @@ public class MedicalRecordService {
 		if (medicalRecordRepository.existsByPatientId(record.getPatientId())) {
 			throw new ConflictException("MedicalRecord already exists for this patientId");
 		}
-		userServiceGateway.getRequiredPatient(record.getPatientId());
-		return medicalRecordRepository.save(record);
+        UserSummaryDto patient = userServiceGateway.getRequiredPatient(record.getPatientId());
+        MedicalRecord savedRecord = medicalRecordRepository.save(record);
+        medicalRecordEventPublisher.publishCreated(savedRecord, patient);
+		return savedRecord;
 	}
 
     public MedicalRecord autoCreate(MedicalRecord record) {
@@ -58,7 +63,9 @@ public class MedicalRecordService {
 		ensureRecordIsActive(existing);
 		existing.setBloodGroup(updated.getBloodGroup());
 		existing.setAlzheimerStage(updated.getAlzheimerStage());
-		return medicalRecordRepository.save(existing);
+        MedicalRecord savedRecord = medicalRecordRepository.save(existing);
+        medicalRecordEventPublisher.publishUpdated(savedRecord);
+		return savedRecord;
 	}
 
 	public MedicalRecord archive(String id, MedicalRecordArchiveRequest request) {
@@ -72,7 +79,9 @@ public class MedicalRecordService {
 		existing.setArchivedBy(request != null ? normalizeOptional(request.getArchivedBy()) : null);
 		existing.setArchiveReason(request != null ? normalizeOptional(request.getArchiveReason()) : null);
 
-		return medicalRecordRepository.save(existing);
+        MedicalRecord savedRecord = medicalRecordRepository.save(existing);
+        medicalRecordEventPublisher.publishUpdated(savedRecord);
+		return savedRecord;
 	}
 
 	public MedicalRecord restore(String id) {
@@ -86,11 +95,14 @@ public class MedicalRecordService {
 		existing.setArchivedBy(null);
 		existing.setArchiveReason(null);
 
-		return medicalRecordRepository.save(existing);
+        MedicalRecord savedRecord = medicalRecordRepository.save(existing);
+        medicalRecordEventPublisher.publishUpdated(savedRecord);
+		return savedRecord;
 	}
 
 	public void delete(String id) {
 		MedicalRecord existing = findById(id);
+        medicalRecordEventPublisher.publishDeleted(existing);
 		medicalRecordRepository.deleteById(id);
 	}
 

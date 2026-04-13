@@ -55,7 +55,10 @@ public class ApiGatewayApplication {
                         .uri("lb://APPOINTMENT-SERVICE"))
                 .route("activities-service", r -> r
                         .path("/EverCare/activities/**",
-                                "/EverCare/admin/activities/**")
+                                "/EverCare/admin/activities/**",
+                                "/EverCare/admin/activity-details/**",
+                                "/EverCare/admin/uploads/**",
+                                "/EverCare/uploads/activities/**")
                         .filters(f -> f.rewritePath("/EverCare/(?<segment>.*)", "/${segment}")) // 👈 add this
                         .uri("lb://ACTIVITIES-SERVICE"))
                 .route("communication-service", r -> r

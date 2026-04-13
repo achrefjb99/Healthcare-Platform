@@ -146,6 +146,10 @@ services:
       - SPRING_DATASOURCE_PASSWORD=root
       - SPRING_CONFIG_IMPORT=optional:configserver:http://config-server:8888
       - USER_SERVICE_URL=http://host.docker.internal:8096/EverCare
+      - SPRING_RABBITMQ_HOST=host.docker.internal
+      - SPRING_RABBITMQ_PORT=5672
+      - SPRING_RABBITMQ_USERNAME=admin
+      - SPRING_RABBITMQ_PASSWORD=admin123
 
   blog-service:
     build: ./blog-service
